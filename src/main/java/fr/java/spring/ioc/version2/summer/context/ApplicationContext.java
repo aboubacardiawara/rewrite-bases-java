@@ -6,8 +6,9 @@ import org.reflections.Reflections;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -27,11 +28,7 @@ public class ApplicationContext {
     }
 
     private <T> Class<T> getImplementation(Class<T> item) {
-        /**
-         * TODO Get all classes corresponding the Bean we want to instantiate.
-         * We are going to use the corresponding interface to facilitate the classes
-         * filtering.
-         */
+
         final Set<Class<?>> classes = componentBeans.stream().filter(element -> element == item)
                 .collect(Collectors.toSet());
 
@@ -76,6 +73,38 @@ public class ApplicationContext {
 
     private <T> Object[] getConstructorParameters(Constructor<T> constructor) {
         final Class<?>[] parameterTypes = constructor.getParameterTypes();
-        return parameterTypes;
+        int parametersCount = parameterTypes.length;
+        Object[] parameterObjects = new Object[parametersCount];
+        for (int i = 0; i < parameterTypes.length; i++) {
+            Class<?> parameterType = parameterTypes[i];
+            parameterObjects[i] = createBean(candidatClass(parameterType));
+        }
+        return parameterObjects;
+    }
+
+    private Class<?> candidatClass(Class<?> typeDefinition) {
+        if (typeDefinition.isInterface()) {
+            Set<Class<?>> candidats = (Set<Class<?>>) getSubTypesOfInterface(typeDefinition);
+            if (candidats.size() == 1) {
+                return candidats.stream().findFirst().get();
+            }
+            Set<Class<?>> candidatsWithAnnotation = candidats.stream()
+                    .filter(candidat -> candidat.getAnnotations().length != 0)
+                    .collect(Collectors.toSet());
+
+            if (candidatsWithAnnotation.size() > 1) {
+                throw new SummerException("There are more than 1 implementation for " + typeDefinition.getName());
+            }
+
+            return candidatsWithAnnotation.stream()
+                    .findFirst()
+                    .orElseThrow(() -> new SummerException("Any implementation for " + typeDefinition));
+        }
+        return typeDefinition;
+    }
+
+    private Set<?> getSubTypesOfInterface(Class<?> interfaceDefiniton) {
+        Reflections reflections = new Reflections(interfaceDefiniton.getPackage().getName());
+        return reflections.getSubTypesOf(interfaceDefiniton);
     }
 }

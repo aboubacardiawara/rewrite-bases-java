@@ -15,6 +15,8 @@ public class App2 {
         Class<?> appToConsider = getClass();
         final ApplicationContext applicationContext = new ApplicationContext(appToConsider);
         final PersonService personService = new PersonServiceImpl();
+        // PersonServiceImpl bean = applicationContext.getBean(PersonServiceImpl.class);
+
         Person person = DataGenerator.createPerson();
         UUID saved = personService.save(person);
         personService.findById(saved);
