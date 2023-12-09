@@ -8,6 +8,8 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -16,15 +18,26 @@ import java.util.stream.Stream;
 public class ApplicationContext {
 
     private final Set<Class<?>> componentBeans;
+    private Map<Class<?>, Object> singletons;
 
     public ApplicationContext(Class<?> applicationClass) {
         final Reflections reflections = new Reflections(applicationClass.getPackage().getName());
         this.componentBeans = reflections.getTypesAnnotatedWith(Component.class);
+        singletons = new HashMap<>();
     }
 
     public <T> T getBean(Class<T> clazz) {
+        if (singletons.containsKey(clazz)) {
+            return (T) singletons.get(clazz);
+        }
+        return getBeanNotCreatedYet(clazz);
+    }
+
+    public <T> T getBeanNotCreatedYet(Class<T> clazz) {
         final Class<T> implementation = getImplementation(clazz);
-        return createBean(implementation);
+        T bean = createBean(implementation);
+        singletons.put(clazz, bean);
+        return bean;
     }
 
     private <T> Class<T> getImplementation(Class<T> item) {
