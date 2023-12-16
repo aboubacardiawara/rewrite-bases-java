@@ -12,4 +12,5 @@ class App2Test {
         App2 app = new App2();
         assertDoesNotThrow(app::exec);
     }
+
 }

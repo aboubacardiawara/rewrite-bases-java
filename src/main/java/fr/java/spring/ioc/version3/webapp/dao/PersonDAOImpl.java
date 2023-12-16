@@ -1,5 +1,6 @@
 package fr.java.spring.ioc.version3.webapp.dao;
 
+import fr.java.spring.ioc.common.annotation.Cacheable;
 import fr.java.spring.ioc.common.annotation.Component;
 import fr.java.spring.ioc.common.model.Person;
 import org.slf4j.Logger;
@@ -32,10 +33,11 @@ public class PersonDAOImpl implements PersonDAO {
     }
 
     @Override
+    @Cacheable
     public Person findById(UUID id) {
         LOGGER.info("Find person {}", id);
 
         return Optional.ofNullable(persons.get(id))
-              .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(NoSuchElementException::new);
     }
 }

@@ -3,9 +3,13 @@ package fr.java.spring.ioc.version3.summer.context;
 import fr.java.spring.ioc.common.annotation.Autowired;
 import fr.java.spring.ioc.common.annotation.Component;
 import fr.java.spring.ioc.common.exception.SummerException;
+import fr.java.spring.ioc.version3.summer.handler.ProxyInvocationHandler;
+import javassist.tools.reflect.Reflection;
+
 import org.reflections.Reflections;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -29,16 +33,16 @@ public class ApplicationContext {
 
     private <T> Class<T> getImplementation(Class<T> item) {
         final Set<Class<?>> classes = componentBeans.stream()
-              .filter(componentBean -> List.of(componentBean.getInterfaces()).contains(item))
-              .collect(Collectors.toSet());
+                .filter(componentBean -> List.of(componentBean.getInterfaces()).contains(item))
+                .collect(Collectors.toSet());
 
         if (classes.size() > 1) {
             throw new SummerException("There are more than 1 implementation for " + item.getName());
         }
 
         return (Class<T>) classes.stream()
-              .findFirst()
-              .orElseThrow(() -> new SummerException("No valid candidate for bean " + item));
+                .findFirst()
+                .orElseThrow(() -> new SummerException("No valid candidate for bean " + item));
     }
 
     private <T> T createBean(Class<T> clazz, Class<T> implementation) {
@@ -53,12 +57,18 @@ public class ApplicationContext {
              * - the class we want to implement
              * - and the wrapper of our implementation
              */
-            final Object proxy = null;
+            final Object proxy = Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), getBeanInterfaces(clazz),
+                    new ProxyInvocationHandler(bean));
 
-            return null; // TODO cast the created object
+            return (T) proxy;
         } catch (Exception e) {
             throw new SummerException("Exception occurred creating bean " + implementation.getName(), e);
         }
+    }
+
+    private <T> Class<?>[] getBeanInterfaces(Class<T> clazz) {
+        Class<?>[] interfaces = { clazz };
+        return interfaces;
     }
 
     private <T> Constructor<T> getConstructor(Class<T> clazz) {
@@ -68,22 +78,22 @@ public class ApplicationContext {
         }
 
         final Set<Constructor<T>> constructorsWithAnnotation = Arrays.stream(constructors)
-              .filter(constructor -> constructor.isAnnotationPresent(Autowired.class))
-              .collect(Collectors.toSet());
+                .filter(constructor -> constructor.isAnnotationPresent(Autowired.class))
+                .collect(Collectors.toSet());
 
         if (constructorsWithAnnotation.size() > 1) {
             throw new SummerException("More than 1 constructor for " + clazz.getName());
         }
 
         return constructorsWithAnnotation.stream()
-              .findFirst()
-              .orElseThrow(() -> new SummerException("Cannot find constructor for " + clazz.getName()));
+                .findFirst()
+                .orElseThrow(() -> new SummerException("Cannot find constructor for " + clazz.getName()));
     }
 
     private <T> Object[] getConstructorParameters(Constructor<T> constructor) {
         final Class<?>[] parameterTypes = constructor.getParameterTypes();
         return Arrays.stream(parameterTypes)
-              .map(this::getBean)
-              .toArray(Object[]::new);
+                .map(this::getBean)
+                .toArray(Object[]::new);
     }
 }

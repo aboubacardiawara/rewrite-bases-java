@@ -14,9 +14,13 @@ public class AbstractProxyHandler {
     }
 
     public boolean isSupported(final Method method) {
-        // TODO Second step, the abstract level, we verify the annotation is supported
-        // TODO Verify that the method, directly on the instance, supports the annotation handled (isAnnotationPresent)
-        return false;
+        try {
+            return objectToHandle.getClass().getMethod(method.getName(), method.getParameterTypes())
+                    .isAnnotationPresent(annotation);
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
 }

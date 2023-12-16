@@ -60,9 +60,12 @@ class App3Test {
         PersonDAO personDAO = mockPersonDAO();
         ProxyInvocationHandler proxy = initProxy(personDAO);
 
-        proxy.invoke(null, PersonService.class.getMethod("findByIdButWithInnerMethodCall", UUID.class), List.of(ID).toArray());
-        proxy.invoke(null, PersonService.class.getMethod("findByIdButWithInnerMethodCall", UUID.class), List.of(ID).toArray());
-        proxy.invoke(null, PersonService.class.getMethod("findByIdButWithInnerMethodCall", UUID.class), List.of(ID).toArray());
+        proxy.invoke(null, PersonService.class.getMethod("findByIdButWithInnerMethodCall", UUID.class),
+                List.of(ID).toArray());
+        proxy.invoke(null, PersonService.class.getMethod("findByIdButWithInnerMethodCall", UUID.class),
+                List.of(ID).toArray());
+        proxy.invoke(null, PersonService.class.getMethod("findByIdButWithInnerMethodCall", UUID.class),
+                List.of(ID).toArray());
 
         verify(personDAO, times(3)).findById(any(UUID.class));
     }

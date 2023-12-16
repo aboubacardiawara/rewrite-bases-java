@@ -5,23 +5,25 @@ import fr.java.spring.ioc.common.exception.SummerException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.function.Supplier;
 
 public class ProxyInvocationHandler implements InvocationHandler {
 
     private final Object objectToHandle;
-    // TODO Store cacheable handler
+    private final CacheableHandler cacheableHandler;
 
     public ProxyInvocationHandler(Object objectToHandle) {
         this.objectToHandle = objectToHandle;
-        // TODO Instantiate cacheable handler
+        this.cacheableHandler = new CacheableHandler(objectToHandle);
     }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
-        // TODO third step, call the right handler
-        // TODO is cache supported + cache
-
-        return invokeMethod(method, args);
+        boolean cacheableMethod = cacheableHandler.isSupported(method);
+        Supplier<Object> resultSupplier = () -> invokeMethod(method, args);
+        return cacheableMethod
+                ? cacheableHandler.getFromCacheOrCompute(method, args, resultSupplier)
+                : invokeMethod(method, args);
     }
 
     private Object invokeMethod(Method method, Object[] args) {
